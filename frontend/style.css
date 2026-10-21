@@ -1,0 +1,1027 @@
+/* ==========================================================================
+   METROHEALTH ENTERPRISE HOSPITAL CARDIAC SURVEILLANCE - LIGHT THEME
+   ========================================================================== */
+
+:root {
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-muted: #f1f5f9;
+    --border-light: #e2e8f0;
+    --border-focus: #0284c7;
+
+    /* Clinical Healthcare Palette */
+    --clinical-blue: #0284c7;
+    --clinical-blue-dark: #0369a1;
+    --clinical-blue-light: #e0f2fe;
+    
+    --alert-red: #dc2626;
+    --alert-red-bg: #fef2f2;
+    --alert-red-border: #f87171;
+    --alert-red-dark: #b91c1c;
+
+    --stable-green: #16a34a;
+    --stable-green-bg: #f0fdf4;
+    --stable-green-border: #86efac;
+
+    --warning-amber: #d97706;
+    --warning-amber-bg: #fffbeb;
+    --warning-amber-border: #fcd34d;
+
+    /* Typography Colors */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+
+    /* Fonts */
+    --font-heading: 'Outfit', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.theme-hospital-light {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------------------------------------------------------
+   Top Hospital Navigation Header
+   --------------------------------------------------------- */
+.hospital-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 28px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-light);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-emblem {
+    font-size: 2.2rem;
+    line-height: 1;
+}
+
+.brand-titles h1 {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--clinical-blue-dark);
+}
+
+.brand-sub {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.brand-desc {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.nav-center-status {
+    display: flex;
+    align-items: center;
+}
+
+.network-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--stable-green-bg);
+    border: 1px solid var(--stable-green-border);
+    color: var(--stable-green);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.pulse-green {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--stable-green);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+    animation: pulseRing 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-muted);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background: #e2e8f0;
+    color: var(--text-primary);
+}
+
+.system-time {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+}
+
+/* ---------------------------------------------------------
+   Top Emergency Broadcast Banner
+   --------------------------------------------------------- */
+.emergency-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 28px;
+    background: var(--alert-red-bg);
+    border-bottom: 2px solid var(--alert-red);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+    animation: slideDown 0.3s ease-out;
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.banner-icon {
+    font-size: 1.8rem;
+    animation: alertBounce 1s infinite;
+}
+
+.banner-message {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.banner-alert-tag {
+    background: var(--alert-red);
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.banner-message strong {
+    font-family: var(--font-heading);
+    color: var(--alert-red-dark);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.banner-message span {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+
+.banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-dispatch {
+    background: var(--alert-red);
+    color: #ffffff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-dispatch:hover {
+    background: var(--alert-red-dark);
+    transform: translateY(-1px);
+}
+
+.btn-silence {
+    background: #ffffff;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-silence:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------
+   Hospital Organization Overview Metrics (KPI Cards)
+   --------------------------------------------------------- */
+.hospital-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    padding: 20px 28px 10px 28px;
+}
+
+.kpi-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.icon-blue { background: #e0f2fe; }
+.icon-green { background: #dcfce7; }
+.icon-red { background: #fee2e2; }
+.icon-purple { background: #f3e8ff; }
+
+.kpi-data {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-label {
+    font-size: 0.7rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.kpi-value {
+    font-family: var(--font-heading);
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.15;
+}
+
+.kpi-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.green-sub { color: var(--stable-green); font-weight: 600; }
+.red-sub { color: var(--alert-red); font-weight: 700; }
+.red-text { color: var(--alert-red) !important; }
+
+.highlight-critical {
+    border-color: var(--alert-red-border);
+    background: #fffafa;
+}
+
+/* ---------------------------------------------------------
+   Main Surveillance Section & Multi-Patient Grid
+   --------------------------------------------------------- */
+.hospital-main {
+    padding: 14px 28px 24px 28px;
+    flex: 1;
+}
+
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.section-title-row h2 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.section-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.triage-filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.filter-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+    background: var(--bg-muted);
+}
+
+.filter-pill.active {
+    background: var(--clinical-blue);
+    color: #ffffff;
+    border-color: var(--clinical-blue);
+}
+
+.filter-pill.filter-red.active {
+    background: var(--alert-red);
+    color: #ffffff;
+    border-color: var(--alert-red);
+}
+
+.btn-test-alert {
+    background: #fef2f2;
+    border: 1px solid var(--alert-red-border);
+    color: var(--alert-red);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-test-alert:hover {
+    background: var(--alert-red);
+    color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   Patient Tiles Grid Layout (2x2 Grid)
+   --------------------------------------------------------- */
+.patient-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.patient-tile {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.patient-tile:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.patient-tile.card-stable {
+    border-left: 6px solid var(--stable-green);
+}
+
+.patient-tile.card-critical {
+    border-left: 6px solid var(--alert-red);
+    background: #fffdfd;
+    box-shadow: 0 0 0 1px var(--alert-red-border), 0 4px 12px rgba(220, 38, 38, 0.12);
+    animation: tileGlow 2s infinite ease-in-out;
+}
+
+.tile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.patient-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bed-tag {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+}
+
+.tag-urgent {
+    background: #fee2e2;
+    color: var(--alert-red-dark);
+    border-color: var(--alert-red-border);
+}
+
+.patient-name-wrap h3 {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.patient-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.status-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.chip-normal {
+    background: var(--stable-green-bg);
+    border: 1px solid var(--stable-green-border);
+    color: var(--stable-green);
+}
+
+.chip-normal .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--stable-green);
+}
+
+.chip-critical {
+    background: var(--alert-red-bg);
+    border: 1px solid var(--alert-red);
+    color: var(--alert-red);
+    animation: chipBlink 1.2s infinite;
+}
+
+.chip-critical .chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--alert-red);
+}
+
+/* Vitals Row Inside Patient Tile */
+.tile-vitals-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--bg-muted);
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-light);
+}
+
+.vital-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.vital-lbl {
+    font-size: 0.65rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.vital-num-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.vital-heart-icon {
+    font-size: 1rem;
+}
+
+.vital-num {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.vital-unit {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.confidence-num {
+    color: var(--clinical-blue);
+    font-size: 1.35rem;
+}
+
+.aami-code {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+}
+
+/* Mini Waveform Canvas Strip */
+.tile-strip-wrap {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.strip-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.strip-label {
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.tile-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
+}
+
+.time-stamp {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.btn-inspect {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    color: var(--clinical-blue-dark);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-inspect:hover {
+    background: var(--clinical-blue-light);
+    border-color: var(--clinical-blue);
+}
+
+.btn-urgent {
+    background: var(--alert-red-bg);
+    border-color: var(--alert-red-border);
+    color: var(--alert-red);
+    font-weight: 800;
+}
+
+.btn-urgent:hover {
+    background: var(--alert-red);
+    color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   Bottom Hospital Emergency Event Audit Log (Cassandra Sync)
+   --------------------------------------------------------- */
+.audit-section {
+    background: #ffffff;
+    border-top: 1px solid var(--border-light);
+    padding: 20px 28px;
+}
+
+.audit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.audit-header h3 {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.audit-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.audit-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.audit-badge {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    background: var(--bg-muted);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.btn-clear-log {
+    background: none;
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    cursor: pointer;
+}
+
+.btn-clear-log:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+
+.table-container {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    text-align: left;
+}
+
+.audit-table th {
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    padding: 8px 14px;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.audit-table td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.audit-table tr:hover td {
+    background: #f8fafc;
+}
+
+.audit-table tr.row-critical td {
+    background: #fef2f2;
+}
+
+.badge-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.tag-stable {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.tag-critical {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #f87171;
+}
+
+/* ---------------------------------------------------------
+   Patient Deep-Dive Modal (Lead-II Clinical Strip)
+   --------------------------------------------------------- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-card {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalPop 0.25s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.modal-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.modal-subtitle {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.modal-close-btn:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.calibrated-ecg-container {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calibrated-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.ecg-lead-text {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.rhythm-tag {
+    background: #fee2e2;
+    color: var(--alert-red);
+    border: 1px solid #f87171;
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.calibrated-canvas {
+    display: block;
+    width: 100%;
+    height: 180px;
+}
+
+.modal-diagnostics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.modal-diag-card {
+    background: var(--bg-muted);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.diag-title {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--clinical-blue-dark);
+    margin-bottom: 2px;
+}
+
+.diag-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.diag-row strong {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+
+.green-text { color: var(--stable-green) !important; font-weight: 700; }
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-light);
+    background: #f8fafc;
+}
+
+.btn-modal-action {
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-dispatch-large {
+    background: var(--alert-red);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+}
+
+.btn-dispatch-large:hover {
+    background: var(--alert-red-dark);
+}
+
+.btn-close-modal {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+/* ---------------------------------------------------------
+   Animations
+   --------------------------------------------------------- */
+@keyframes pulseRing {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes alertBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+@keyframes tileGlow {
+    0%, 100% { box-shadow: 0 0 0 1px var(--alert-red-border), 0 2px 8px rgba(220, 38, 38, 0.1); }
+    50% { box-shadow: 0 0 0 2px var(--alert-red), 0 4px 16px rgba(220, 38, 38, 0.25); }
+}
+
+@keyframes chipBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ---------------------------------------------------------
+   Responsive Media Queries
+   --------------------------------------------------------- */
+@media (max-width: 1024px) {
+    .hospital-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .patient-grid {
+        grid-template-columns: 1fr;
+    }
+}

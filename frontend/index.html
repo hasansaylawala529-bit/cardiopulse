@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Central Cardiac Surveillance | Enterprise IoMT Triage</title>
+    <meta name="description" content="Central hospital cardiac surveillance command center. Ingests remote wearable IoT ECG telemetry and triggers real-time clinical alerts.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-hospital-light">
+    <!-- Top Hospital Organization Header -->
+    <header class="hospital-nav">
+        <div class="nav-brand">
+            <div class="brand-emblem">🏥</div>
+            <div class="brand-titles">
+                <h1>METROHEALTH <span class="brand-sub">CENTRAL CARDIAC SURVEILLANCE</span></h1>
+                <p class="brand-desc">Enterprise IoMT Remote Telemetry & Sudden Arrhythmia Early-Warning Command Center</p>
+            </div>
+        </div>
+
+        <div class="nav-center-status">
+            <div class="network-badge">
+                <span class="pulse-green"></span>
+                <span>IOT STREAM ACTIVE • 4 WEARABLES CONNECTED</span>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <button id="soundToggleBtn" class="nav-btn" title="Toggle Emergency Chime">
+                <span id="soundIcon">🔔</span>
+                <span id="soundLabel">ALERTS ON</span>
+            </button>
+            <div class="system-time" id="hospitalClock">11:22:45 PM EST</div>
+        </div>
+    </header>
+
+    <!-- Top Emergency Broadcast Banner (Appears immediately when any patient's rhythm is abnormal) -->
+    <section class="emergency-banner" id="emergencyBanner" style="display: none;">
+        <div class="banner-content">
+            <div class="banner-icon">🚨</div>
+            <div class="banner-message">
+                <span class="banner-alert-tag">CRITICAL CARDIAC EMERGENCY</span>
+                <strong id="emergencyPatientText">PATIENT PAT-102 (Room 204 • Bed 02)</strong>
+                <span id="emergencyDiagnosisText">— Flagged Ventricular Ectopic / PVC (118 BPM, 98.4% Confidence)</span>
+            </div>
+        </div>
+        <div class="banner-actions">
+            <button id="dispatchTeamBtn" class="btn-dispatch">DISPATCH EMERGENCY CODE TEAM</button>
+            <button id="silenceAlertBtn" class="btn-silence">ACKNOWLEDGE & SILENCE</button>
+        </div>
+    </section>
+
+    <!-- Hospital Organization Overview Metrics (KPI Cards) -->
+    <section class="hospital-kpis">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap icon-blue">📶</div>
+            <div class="kpi-data">
+                <span class="kpi-label">ACTIVE IOT WEARABLES</span>
+                <strong class="kpi-value" id="kpiActiveDevices">4 Devices</strong>
+                <span class="kpi-sub green-sub">● All sensors streaming</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap icon-green">💚</div>
+            <div class="kpi-data">
+                <span class="kpi-label">STABLE PATIENTS</span>
+                <strong class="kpi-value" id="kpiStableCount">3 Patients</strong>
+                <span class="kpi-sub">Normal sinus rhythm</span>
+            </div>
+        </div>
+
+        <div class="kpi-card highlight-critical" id="kpiCriticalCard">
+            <div class="kpi-icon-wrap icon-red">🚨</div>
+            <div class="kpi-data">
+                <span class="kpi-label">ACTIVE CARDIAC ALERTS</span>
+                <strong class="kpi-value red-text" id="kpiCriticalCount">1 Emergency</strong>
+                <span class="kpi-sub red-sub" id="kpiCriticalSub">Immediate attention required</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap icon-purple">⚡</div>
+            <div class="kpi-data">
+                <span class="kpi-label">PIPELINE INGESTION LATENCY</span>
+                <strong class="kpi-value" id="kpiLatency">38 ms</strong>
+                <span class="kpi-sub">Kafka ➔ 1D-ResNet ➔ Triage</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Command Center Grid: All Monitored Patients -->
+    <main class="hospital-main">
+        <div class="section-title-row">
+            <div>
+                <h2>CENTRAL WARD MULTI-PATIENT SURVEILLANCE GRID</h2>
+                <p class="section-sub">Continuous 125 Hz Lead-II electrocardiogram ingestion across active wearable IoT telemetry units</p>
+            </div>
+            <div class="triage-filter-controls">
+                <span class="filter-label">TRIAGE FILTER:</span>
+                <button class="filter-pill active" data-filter="all">ALL (4)</button>
+                <button class="filter-pill filter-red" data-filter="critical">CRITICAL ALERTS ONLY</button>
+                <button class="filter-pill filter-green" data-filter="stable">STABLE ONLY</button>
+                <button id="simPvcBtn" class="btn-test-alert" title="Simulate a real-time PVC attack on Patient 102 to test hospital alerts">
+                    ⚡ SIMULATE PVC ALERT
+                </button>
+            </div>
+        </div>
+
+        <!-- 4-Patient Hospital Ward Grid -->
+        <div class="patient-grid" id="patientGrid">
+            
+            <!-- Patient Card 1 -->
+            <article class="patient-tile card-stable" id="card-PAT-101" data-patient="PAT-101">
+                <div class="tile-header">
+                    <div class="patient-info">
+                        <span class="bed-tag">BED 01</span>
+                        <div class="patient-name-wrap">
+                            <h3>PAT-101</h3>
+                            <span class="patient-sub">Ward West • Holter IoT DEV-101</span>
+                        </div>
+                    </div>
+                    <div class="status-chip chip-normal" id="chip-PAT-101">
+                        <span class="chip-dot"></span>
+                        <span class="chip-text">NORMAL SINUS</span>
+                    </div>
+                </div>
+
+                <div class="tile-vitals-row">
+                    <div class="vital-box">
+                        <span class="vital-lbl">HEART RATE</span>
+                        <div class="vital-num-wrap">
+                            <span class="vital-heart-icon">❤️</span>
+                            <strong class="vital-num" id="hr-PAT-101">72</strong>
+                            <span class="vital-unit">BPM</span>
+                        </div>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">1D-RESNET CONFIDENCE</span>
+                        <strong class="vital-num confidence-num" id="conf-PAT-101">99.4%</strong>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">AAMI CODE</span>
+                        <strong class="vital-num aami-code" id="aami-PAT-101">Class N (0)</strong>
+                    </div>
+                </div>
+
+                <!-- Mini Waveform Canvas Strip -->
+                <div class="tile-strip-wrap">
+                    <canvas id="canvas-PAT-101" class="strip-canvas"></canvas>
+                    <span class="strip-label">LEAD II (10mm/mV)</span>
+                </div>
+
+                <div class="tile-footer">
+                    <span class="time-stamp" id="time-PAT-101">Last packet: Just now</span>
+                    <button class="btn-inspect" onclick="openPatientModal('PAT-101')">INSPECT ECG STRIP</button>
+                </div>
+            </article>
+
+            <!-- Patient Card 2 (Critical Alert Candidate) -->
+            <article class="patient-tile card-critical" id="card-PAT-102" data-patient="PAT-102">
+                <div class="tile-header">
+                    <div class="patient-info">
+                        <span class="bed-tag tag-urgent">BED 02 • CCU</span>
+                        <div class="patient-name-wrap">
+                            <h3>PAT-102</h3>
+                            <span class="patient-sub">Cardiac ICU • Patch IoT DEV-102</span>
+                        </div>
+                    </div>
+                    <div class="status-chip chip-critical" id="chip-PAT-102">
+                        <span class="chip-dot"></span>
+                        <span class="chip-text">VENTRICULAR ECTOPIC</span>
+                    </div>
+                </div>
+
+                <div class="tile-vitals-row">
+                    <div class="vital-box">
+                        <span class="vital-lbl">HEART RATE</span>
+                        <div class="vital-num-wrap">
+                            <span class="vital-heart-icon alert-pulse">🚨</span>
+                            <strong class="vital-num red-text" id="hr-PAT-102">118</strong>
+                            <span class="vital-unit">BPM</span>
+                        </div>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">1D-RESNET CONFIDENCE</span>
+                        <strong class="vital-num confidence-num" id="conf-PAT-102">98.2%</strong>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">AAMI CODE</span>
+                        <strong class="vital-num aami-code red-text" id="aami-PAT-102">Class V (2)</strong>
+                    </div>
+                </div>
+
+                <!-- Mini Waveform Canvas Strip -->
+                <div class="tile-strip-wrap">
+                    <canvas id="canvas-PAT-102" class="strip-canvas"></canvas>
+                    <span class="strip-label">LEAD II (10mm/mV)</span>
+                </div>
+
+                <div class="tile-footer">
+                    <span class="time-stamp" id="time-PAT-102">Last packet: Just now</span>
+                    <button class="btn-inspect btn-urgent" onclick="openPatientModal('PAT-102')">EMERGENCY REVIEW</button>
+                </div>
+            </article>
+
+            <!-- Patient Card 3 -->
+            <article class="patient-tile card-stable" id="card-PAT-103" data-patient="PAT-103">
+                <div class="tile-header">
+                    <div class="patient-info">
+                        <span class="bed-tag">BED 03</span>
+                        <div class="patient-name-wrap">
+                            <h3>PAT-103</h3>
+                            <span class="patient-sub">Telemetry Unit • Smartwatch DEV-103</span>
+                        </div>
+                    </div>
+                    <div class="status-chip chip-normal" id="chip-PAT-103">
+                        <span class="chip-dot"></span>
+                        <span class="chip-text">NORMAL SINUS</span>
+                    </div>
+                </div>
+
+                <div class="tile-vitals-row">
+                    <div class="vital-box">
+                        <span class="vital-lbl">HEART RATE</span>
+                        <div class="vital-num-wrap">
+                            <span class="vital-heart-icon">❤️</span>
+                            <strong class="vital-num" id="hr-PAT-103">78</strong>
+                            <span class="vital-unit">BPM</span>
+                        </div>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">1D-RESNET CONFIDENCE</span>
+                        <strong class="vital-num confidence-num" id="conf-PAT-103">99.1%</strong>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">AAMI CODE</span>
+                        <strong class="vital-num aami-code" id="aami-PAT-103">Class N (0)</strong>
+                    </div>
+                </div>
+
+                <!-- Mini Waveform Canvas Strip -->
+                <div class="tile-strip-wrap">
+                    <canvas id="canvas-PAT-103" class="strip-canvas"></canvas>
+                    <span class="strip-label">LEAD II (10mm/mV)</span>
+                </div>
+
+                <div class="tile-footer">
+                    <span class="time-stamp" id="time-PAT-103">Last packet: Just now</span>
+                    <button class="btn-inspect" onclick="openPatientModal('PAT-103')">INSPECT ECG STRIP</button>
+                </div>
+            </article>
+
+            <!-- Patient Card 4 -->
+            <article class="patient-tile card-stable" id="card-PAT-104" data-patient="PAT-104">
+                <div class="tile-header">
+                    <div class="patient-info">
+                        <span class="bed-tag">BED 04</span>
+                        <div class="patient-name-wrap">
+                            <h3>PAT-104</h3>
+                            <span class="patient-sub">Stepdown Ward • Wearable Band DEV-104</span>
+                        </div>
+                    </div>
+                    <div class="status-chip chip-normal" id="chip-PAT-104">
+                        <span class="chip-dot"></span>
+                        <span class="chip-text">NORMAL SINUS</span>
+                    </div>
+                </div>
+
+                <div class="tile-vitals-row">
+                    <div class="vital-box">
+                        <span class="vital-lbl">HEART RATE</span>
+                        <div class="vital-num-wrap">
+                            <span class="vital-heart-icon">❤️</span>
+                            <strong class="vital-num" id="hr-PAT-104">68</strong>
+                            <span class="vital-unit">BPM</span>
+                        </div>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">1D-RESNET CONFIDENCE</span>
+                        <strong class="vital-num confidence-num" id="conf-PAT-104">99.7%</strong>
+                    </div>
+                    <div class="vital-box">
+                        <span class="vital-lbl">AAMI CODE</span>
+                        <strong class="vital-num aami-code" id="aami-PAT-104">Class N (0)</strong>
+                    </div>
+                </div>
+
+                <!-- Mini Waveform Canvas Strip -->
+                <div class="tile-strip-wrap">
+                    <canvas id="canvas-PAT-104" class="strip-canvas"></canvas>
+                    <span class="strip-label">LEAD II (10mm/mV)</span>
+                </div>
+
+                <div class="tile-footer">
+                    <span class="time-stamp" id="time-PAT-104">Last packet: Just now</span>
+                    <button class="btn-inspect" onclick="openPatientModal('PAT-104')">INSPECT ECG STRIP</button>
+                </div>
+            </article>
+
+        </div>
+    </main>
+
+    <!-- Bottom Hospital Emergency Event Audit Log (Cassandra Sync View) -->
+    <footer class="audit-section">
+        <div class="audit-header">
+            <div>
+                <h3>🚨 REAL-TIME CARDIAC EMERGENCY AUDIT LOG</h3>
+                <span class="audit-sub">Direct ingestion stream from Apache Kafka topic <code>ecg_telemetry</code> & Apache Cassandra table <code>spark_streams.ecg_patient_alerts</code></span>
+            </div>
+            <div class="audit-controls">
+                <span class="audit-badge" id="auditCountBadge">18 Events Recorded</span>
+                <button id="clearAuditBtn" class="btn-clear-log">CLEAR LOG VIEW</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="audit-table">
+                <thead>
+                    <tr>
+                        <th>TIME</th>
+                        <th>PATIENT ID</th>
+                        <th>LOCATION / ROOM</th>
+                        <th>IOT DEVICE ID</th>
+                        <th>HEART RATE</th>
+                        <th>AI DIAGNOSIS</th>
+                        <th>SEVERITY</th>
+                        <th>CLINICAL ACTION</th>
+                    </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                    <!-- Populated dynamically via app.js -->
+                </tbody>
+            </table>
+        </div>
+    </footer>
+
+    <!-- Patient Deep-Dive Modal (Lead-II Clinical Strip & Diagnostic Breakdown) -->
+    <div class="modal-overlay" id="patientModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalPatientTitle">PATIENT PAT-102 — CLINICAL TELEMETRY DEEP-DIVE</h2>
+                    <span id="modalPatientSubtitle" class="modal-subtitle">Cardiac ICU • Room 204 • IoT Wearable Patch DEV-102</span>
+                </div>
+                <button class="modal-close-btn" onclick="closePatientModal()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Large Clinical Calibrated Waveform Strip -->
+                <div class="calibrated-ecg-container">
+                    <div class="calibrated-header">
+                        <span class="ecg-lead-text">LEAD-II DIAGNOSTIC STRIP (Standard Calibrated Medical Grid: 25 mm/s • 10 mm/mV)</span>
+                        <span class="rhythm-tag" id="modalRhythmTag">Ventricular Ectopic (PVC)</span>
+                    </div>
+                    <canvas id="modalCanvas" class="calibrated-canvas"></canvas>
+                </div>
+
+                <!-- Diagnostics & Model Explanation Row -->
+                <div class="modal-diagnostics-grid">
+                    <div class="modal-diag-card">
+                        <span class="diag-title">1D-ResNet AI Analysis</span>
+                        <div class="diag-row">
+                            <span>Predicted Arrhythmia:</span>
+                            <strong id="modalPrediction">Ventricular Ectopic (V)</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>AAMI EC57 Class:</span>
+                            <strong id="modalAamiClass">Class 2 (V)</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Inference Confidence:</span>
+                            <strong id="modalConfidence">98.24%</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Model Validation Acc:</span>
+                            <strong class="green-text">97.94% (MIT-BIH Test Set)</strong>
+                        </div>
+                    </div>
+
+                    <div class="modal-diag-card">
+                        <span class="diag-title">Vitals & IoT Sensor Health</span>
+                        <div class="diag-row">
+                            <span>Heart Rate:</span>
+                            <strong id="modalHeartRate">118 BPM</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Sampling Rate:</span>
+                            <strong>125 Hz (Single-Lead Telemetry)</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Signal Quality:</span>
+                            <strong class="green-text">99.8% (SNR > 28 dB)</strong>
+                        </div>
+                        <div class="diag-row">
+                            <span>Storage Sink:</span>
+                            <strong>Apache Cassandra (spark_streams)</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal-action btn-dispatch-large" onclick="triggerCodeBlueAction()">🚨 TRIGGER RAPID RESPONSE / CODE TEAM</button>
+                <button class="btn-modal-action btn-close-modal" onclick="closePatientModal()">CLOSE INSPECTION</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

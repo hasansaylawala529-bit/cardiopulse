@@ -1,0 +1,46 @@
+# Python & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Large Datasets & Checkpoints
+mitbih_train.csv
+mitbih_test.csv
+*.csv
+!data/sample_mitbih.csv
+/tmp/
+tmp/
+checkpoint/
+/tmp/ecg_checkpoint/
+.pytest_cache/
+
+# Docker Local Artifacts & Binary Images (Do not push images to Git)
+*.tar
+*.img
+*.iso
+
+# PyTorch Model Checkpoints
+*.pth
+
+# Streamlit Local Cache
+.streamlit/
+
+# Docker & Services Logs
+logs/
+*.log
+airflow_scheduler_logs.txt
+cassandra_logs.txt
+kafka_broker_logs.txt
+spark_master_logs.txt
+Project Run*.txt
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
