@@ -7,6 +7,13 @@ import plotly.graph_objects as go
 import streamlit as st
 from cassandra.cluster import Cluster
 
+try:
+    from notification_service.aws_sns_alert import alert_dispatcher
+except ImportError:
+    import sys
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from notification_service.aws_sns_alert import alert_dispatcher
+
 # ---------------------------------------------------------
 # Page Configuration
 # ---------------------------------------------------------
@@ -912,7 +919,22 @@ if "selected_inspect_patient" in st.session_state and st.session_state.selected_
     btn_action1, btn_action2 = st.columns([1, 1])
     with btn_action1:
         if st.button("🚨 TRIGGER RAPID RESPONSE / CODE TEAM", use_container_width=True, type="primary"):
-            st.success(f"Code Blue alerted for Patient {p_data['id']} ({p_data['room']})!")
+            res = alert_dispatcher.send_arrhythmia_alert(
+                patient_id=p_data['id'],
+                prediction=p_data['rhythm'],
+                heart_rate_bpm=p_data['bpm'],
+                confidence=p_data['conf'],
+                ward=p_data['ward'],
+                room=p_data['room'],
+                bed=p_data['bed'],
+                device_id=p_data['device'],
+                force=True
+            )
+            msg_id = res.get("message_id")
+            if msg_id:
+                st.success(f"🚨 AWS SNS Emergency Alert published to team! (Message ID: {msg_id[:12]}...)")
+            else:
+                st.success(f"Code Blue alerted for Patient {p_data['id']} ({p_data['room']})!")
     with btn_action2:
         if st.button("✕ CLOSE INSPECTION", use_container_width=True):
             st.session_state.selected_inspect_patient = None
@@ -1036,12 +1058,24 @@ st.markdown("---")
 f_col1, f_col2, f_col3 = st.columns([1, 1, 1])
 
 with f_col1:
-    if st.button("⚡ SIMULATE PVC ALERT", use_container_width=True):
-        try:
-            requests.post("http://127.0.0.1:8000/api/simulate-pvc", timeout=1)
-            st.toast("⚡ Simulated PVC beat scored through 1D-ResNet model!")
-        except Exception:
-            st.toast("⚡ PVC triggered locally!")
+    btn_pvc, btn_aws = st.columns([1, 1])
+    with btn_pvc:
+        if st.button("⚡ SIMULATE PVC", use_container_width=True):
+            try:
+                requests.post("http://127.0.0.1:8000/api/simulate-pvc", timeout=1)
+                st.toast("⚡ Simulated PVC beat scored through 1D-ResNet model!")
+            except Exception:
+                st.toast("⚡ PVC triggered locally!")
+    with btn_aws:
+        if st.button("📧 TEST AWS ALERT", use_container_width=True):
+            res = alert_dispatcher.send_arrhythmia_alert(
+                patient_id="PAT-102",
+                prediction="Ventricular Ectopic (V)",
+                heart_rate_bpm=118,
+                confidence=0.984,
+                force=True
+            )
+            st.toast(f"📧 AWS SNS Alert: {res.get('status', 'sent')} (ID: {str(res.get('message_id'))[:8]}...)")
 
 with f_col2:
     auto_refresh = st.checkbox("Auto-Refresh Live Stream (2s)", value=True)

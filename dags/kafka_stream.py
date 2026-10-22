@@ -39,6 +39,13 @@ def load_dataset():
         synthetic_rows.append(row)
     return pd.DataFrame(synthetic_rows)
 
+try:
+    from notification_service.aws_sns_alert import alert_dispatcher
+except ImportError:
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from notification_service.aws_sns_alert import alert_dispatcher
+
 if __name__ == "__main__":
     print("[*] Streaming Wearable ECG Telemetry to Kafka topic:", TOPIC_NAME)
     df = load_dataset()
@@ -77,4 +84,15 @@ if __name__ == "__main__":
         producer.send(TOPIC_NAME, payload)
         producer.flush()
         print(f"Sent -> {patient_id} | {label} ({conf*100:.1f}%)")
+
+        # Dispatch real-time AWS SNS alert for critical arrhythmias (debounced at 10 minutes per patient)
+        if alert_status == "CRITICAL":
+            alert_dispatcher.send_arrhythmia_alert(
+                patient_id=patient_id,
+                prediction=str(label),
+                heart_rate_bpm=payload["heart_rate_bpm"],
+                confidence=conf,
+                device_id=payload["device_id"]
+            )
+
         time.sleep(1)

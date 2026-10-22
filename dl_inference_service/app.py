@@ -208,6 +208,39 @@ def get_live_telemetry(limit: int = 100):
     except Exception as e:
         return {"status": "error", "message": str(e), "patients": {}, "audit_log": []}
 
+try:
+    from notification_service.aws_sns_alert import alert_dispatcher
+except ImportError:
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from notification_service.aws_sns_alert import alert_dispatcher
+
+class AlertTriggerRequest(BaseModel):
+    patient_id: str = "PAT-102"
+    prediction: str = "Ventricular Ectopic (V)"
+    heart_rate_bpm: int = 118
+    confidence: float = 0.982
+    ward: str = "Cardiac ICU"
+    room: str = "Room 204"
+    bed: str = "BED 02 • CCU"
+    device_id: str = "Patch IoT DEV-102"
+    force: bool = True
+
+@app.post("/api/alert/aws-sns")
+def trigger_aws_alert(data: AlertTriggerRequest):
+    """Triggers an out-of-band cardiac alert email via AWS SNS."""
+    return alert_dispatcher.send_arrhythmia_alert(
+        patient_id=data.patient_id,
+        prediction=data.prediction,
+        heart_rate_bpm=data.heart_rate_bpm,
+        confidence=data.confidence,
+        ward=data.ward,
+        room=data.room,
+        bed=data.bed,
+        device_id=data.device_id,
+        force=data.force
+    )
+
 @app.post("/api/simulate-pvc")
 def simulate_pvc():
     """Generates an urgent PVC beat for on-demand alert testing."""

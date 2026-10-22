@@ -80,6 +80,9 @@ cardiopulse/
 │   └── requirements.txt         # Service dependencies
 ├── dags/
 │   └── kafka_stream.py          # Wearable sensor simulator & Kafka producer
+├── notification_service/        # Enterprise Alert Dispatcher (AWS SNS)
+│   ├── __init__.py
+│   └── aws_sns_alert.py         # Out-of-band email notifications with 10-minute cooldown
 ├── script/
 │   ├── entrypoint.sh            # Airflow container entrypoint
 │   ├── init_cassandra.cql       # Cassandra keyspace & table schema
@@ -88,6 +91,7 @@ cardiopulse/
 ├── spark_stream.py              # PySpark Structured Streaming job (Kafka -> Cassandra)
 ├── streamlit_app.py             # Hospital Big Data analytics & Cassandra triage suite (Light Theme)
 ├── requirements.txt             # Comprehensive workspace Python dependencies
+├── .env.example                 # Template for AWS SNS notification credentials
 ├── RUN_INSTRUCTIONS.md          # Step-by-step operating guide
 ├── .gitignore                   # Optimized ignore rules (excludes large CSVs, caches, logs)
 └── LICENSE                      # Open-source MIT License
@@ -118,6 +122,7 @@ cardiopulse/
 | **🔄 Stream Processing** | **Apache Spark Structured Streaming** | Consumes events in real-time, validates schema, filters arrhythmias, and writes to NoSQL storage. |
 | **🗄️ Distributed Database** | **Apache Cassandra** | Wide-column NoSQL database storing enriched patient telemetry in table `spark_streams.ecg_patient_alerts`. |
 | **☁️ API & Microservices** | **FastAPI + Uvicorn** | High-performance asynchronous REST microservice serving model predictions and live telemetry endpoints. |
+| **📧 Cloud Notifications** | **AWS SNS (Simple Notification Service)** | Instant out-of-band email notifications to clinical teams with automated 10-minute per-patient debouncing. |
 | **📊 Clinical Dashboards** | **Streamlit + Plotly + HTML5 Canvas** | Multi-patient ICU command center and 60 FPS sweeping oscilloscope with calibrated medical grid and audio alerts. |
 
 ---
@@ -201,6 +206,24 @@ You can view both clinical interfaces concurrently:
    Open in your browser:
    👉 **[http://localhost:8000/monitor/](http://localhost:8000/monitor/)**
    *Displays 60 FPS sweeping oscilloscope ECG trace, Web Audio pulse sound, and live vitals HUD.*
+
+---
+
+### Step 7 (Optional): Cloud Alerting via AWS SNS
+To receive automated email notifications when a patient triggers a critical arrhythmia:
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Populate your AWS credentials and Topic ARN:
+   ```ini
+   AWS_ACCESS_KEY_ID="AKIA..."
+   AWS_SECRET_ACCESS_KEY="..."
+   AWS_DEFAULT_REGION="ap-south-1"
+   AWS_SNS_TOPIC_ARN="arn:aws:sns:ap-south-1:123456789012:cardiopulse-cardiac-alerts"
+   ALERT_COOLDOWN_SECONDS=600   # 10-minute debouncing window per patient
+   ```
+3. When `kafka_stream.py` detects a critical rhythm (e.g. Ventricular Ectopic PVC), an urgent email alert is published to the SNS Topic with a 10-minute debouncing window to prevent inbox saturation. You can also click **"📧 TEST AWS ALERT"** in the Streamlit dashboard to test delivery immediately.
 
 ---
 

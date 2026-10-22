@@ -134,36 +134,11 @@ class HospitalAudioAlerts {
 const hospitalAudio = new HospitalAudioAlerts();
 
 // -------------------------------------------------------------
-// Waveform Generators (MIT-BIH Shapes)
+// Real Ingested Waveform Buffer (187-sample MIT-BIH Lead-II)
 // -------------------------------------------------------------
-function generateBeat(type = "normal") {
-    const samples = 187;
-    const wave = new Array(samples).fill(0);
-
-    if (type === "pvc") {
-        for (let i = 0; i < samples; i++) {
-            const t = i / samples;
-            const deepS = -1.15 * Math.exp(-Math.pow((t - 0.35) / 0.05, 2));
-            const wideT = 0.45 * Math.exp(-Math.pow((t - 0.65) / 0.12, 2));
-            wave[i] = deepS + wideT + (Math.random() - 0.5) * 0.02;
-        }
-    } else {
-        for (let i = 0; i < samples; i++) {
-            const t = i / samples;
-            const p = 0.15 * Math.exp(-Math.pow((t - 0.18) / 0.03, 2));
-            const q = -0.15 * Math.exp(-Math.pow((t - 0.28) / 0.015, 2));
-            const r = 1.15 * Math.exp(-Math.pow((t - 0.32) / 0.015, 2));
-            const s = -0.3 * Math.exp(-Math.pow((t - 0.36) / 0.02, 2));
-            const twave = 0.28 * Math.exp(-Math.pow((t - 0.6) / 0.07, 2));
-            wave[i] = p + q + r + s + twave + (Math.random() - 0.5) * 0.02;
-        }
-    }
-    return wave;
-}
-
-// Initialize waveforms
+// Initialized to baseline; continuously populated by Docker Kafka -> Cassandra stream
 Object.keys(patientsData).forEach(pId => {
-    patientsData[pId].waveform = generateBeat(pId === "PAT-102" ? "pvc" : "normal");
+    patientsData[pId].waveform = new Array(187).fill(0.0);
 });
 
 // -------------------------------------------------------------
@@ -326,18 +301,13 @@ function onPatientCycleComplete(patientId) {
     const p = patientsData[patientId];
     if (!p) return;
 
-    // Slight physiological jitter in heart rate
     if (p.status === "CRITICAL") {
-        p.heartRate = Math.min(130, Math.max(105, p.heartRate + (Math.random() > 0.5 ? 2 : -2)));
         hospitalAudio.playEmergencyChime();
-    } else {
-        p.heartRate = Math.min(84, Math.max(64, p.heartRate + (Math.random() > 0.5 ? 1 : -1)));
     }
 
     const hrEl = document.getElementById(`hr-${patientId}`);
     if (hrEl) hrEl.innerText = p.heartRate;
 
-    // If PAT-102, maintain emergency state and log event
     if (p.status === "CRITICAL") {
         checkAndShowEmergencyBanner(patientId);
     }
@@ -349,14 +319,9 @@ function checkAndShowEmergencyBanner(patientId) {
     const pText = document.getElementById("emergencyPatientText");
     const diagText = document.getElementById("emergencyDiagnosisText");
 
-    pText.innerText = `PATIENT ${p.id} (${p.ward} • ${p.room} • ${p.bed})`;
-    diagText.innerText = `— Flagged ${p.rhythm} (${p.heartRate} BPM, ${(p.confidence * 100).toFixed(1)}% Confidence)`;
-    banner.style.display = "flex";
-
-    // Add row to audit log table if not already added recently
-    if (Math.random() < 0.3) {
-        addAuditLogRow(p);
-    }
+    if (pText) pText.innerText = `PATIENT ${p.id} (${p.ward} • ${p.room} • ${p.bed})`;
+    if (diagText) diagText.innerText = `— Flagged ${p.rhythm} (${p.heartRate} BPM, ${(p.confidence * 100).toFixed(1)}% Confidence)`;
+    if (banner) banner.style.display = "flex";
 }
 
 function addAuditLogRow(patient) {
