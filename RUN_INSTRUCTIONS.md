@@ -103,7 +103,9 @@ Live streaming output:
 ```text
 Sent -> PAT-101 | Normal Beat (N) (99.8%)
 Sent -> PAT-102 | Ventricular Ectopic (V) (98.4%)
+[+] Successfully published AWS SNS alert for PAT-102 (Message ID: ...)
 ```
+*Whenever a critical arrhythmia is flagged, an emergency alert is automatically dispatched to your AWS SNS topic (debounced with a 10-minute cooldown window per patient).*
 
 ---
 
