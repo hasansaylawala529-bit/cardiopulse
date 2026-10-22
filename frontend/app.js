@@ -546,13 +546,140 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     requestAnimationFrame(animationLoop);
 
-    // Initial emergency banner check
-    checkAndShowEmergencyBanner("PAT-102");
+    // ---------------------------------------------------------
+    // Real-Time Docker Cassandra Pipeline Polling
+    // ---------------------------------------------------------
+    async function pollLiveCassandraTelemetry() {
+        try {
+            const res = await fetch("/api/telemetry?limit=50");
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.status !== "connected") return;
 
-    // Populate initial sample audit log rows
-    addAuditLogRow(patientsData["PAT-102"]);
-    addAuditLogRow(patientsData["PAT-101"]);
-    addAuditLogRow(patientsData["PAT-103"]);
+            // 1. Update status pill
+            const statusEl = document.querySelector(".network-badge span:last-child");
+            if (statusEl && data.stats) {
+                statusEl.innerText = `IOT STREAM ACTIVE • ${data.stats.total_records} BEATS IN CASSANDRA`;
+            }
+
+            // 2. Update KPI metrics
+            const kpiActive = document.getElementById("kpiActiveDevices");
+            const kpiStable = document.getElementById("kpiStableCount");
+            const kpiCrit = document.getElementById("kpiCriticalCount");
+            if (kpiActive && data.stats) kpiActive.innerText = `${data.stats.connected_devices || 4} Devices`;
+            if (kpiStable && data.stats) kpiStable.innerText = `${data.stats.stable_count} Patients`;
+            if (kpiCrit && data.stats) kpiCrit.innerText = `${data.stats.critical_count} Emergency`;
+
+            // 3. Update Patient Cards with real Cassandra data
+            if (data.patients) {
+                Object.keys(data.patients).forEach(pId => {
+                    const rec = data.patients[pId];
+                    if (!patientsData[pId]) return;
+
+                    const p = patientsData[pId];
+                    p.heartRate = rec.heart_rate_bpm || p.heartRate;
+                    p.rhythm = rec.prediction || p.rhythm;
+                    p.confidence = rec.confidence || p.confidence;
+                    p.status = rec.alert_status || "NORMAL";
+                    p.aami = `Class ${rec.prediction ? rec.prediction.charAt(0) : 'N'} (${rec.class_id || 0})`;
+
+                    if (Array.isArray(rec.lead_ii_signal) && rec.lead_ii_signal.length > 50) {
+                        p.waveform = rec.lead_ii_signal;
+                    }
+
+                    const hrEl = document.getElementById(`hr-${pId}`);
+                    if (hrEl) hrEl.innerText = p.heartRate;
+
+                    const confEl = document.getElementById(`conf-${pId}`);
+                    if (confEl) confEl.innerText = `${(p.confidence * 100).toFixed(1)}%`;
+
+                    const aamiEl = document.getElementById(`aami-${pId}`);
+                    if (aamiEl) aamiEl.innerText = p.aami;
+
+                    const badgeEl = document.getElementById(`badge-${pId}`);
+                    const tileEl = document.getElementById(`tile-${pId}`);
+                    const actionBtn = document.getElementById(`action-${pId}`);
+
+                    if (p.status === "CRITICAL") {
+                        if (badgeEl) {
+                            badgeEl.className = "tile-badge badge-critical";
+                            badgeEl.innerText = `● ${p.rhythm.toUpperCase()}`;
+                        }
+                        if (tileEl) tileEl.classList.add("tile-critical");
+                        if (actionBtn) {
+                            actionBtn.className = "btn-emergency";
+                            actionBtn.innerText = "EMERGENCY REVIEW";
+                        }
+                    } else {
+                        if (badgeEl) {
+                            badgeEl.className = "tile-badge badge-stable";
+                            badgeEl.innerText = `● ${p.rhythm.toUpperCase()}`;
+                        }
+                        if (tileEl) tileEl.classList.remove("tile-critical");
+                        if (actionBtn) {
+                            actionBtn.className = "btn-inspect";
+                            actionBtn.innerText = "INSPECT ECG STRIP";
+                        }
+                    }
+                });
+            }
+
+            // 4. Update Emergency Broadcast Banner
+            const banner = document.getElementById("emergencyBanner");
+            if (data.has_critical && data.latest_critical) {
+                const lc = data.latest_critical;
+                const pText = document.getElementById("emergencyPatientText");
+                const diagText = document.getElementById("emergencyDiagnosisText");
+                if (pText) pText.innerText = `PATIENT ${lc.patient_id} (Cardiac ICU • Room 204 • BED 02 • CCU)`;
+                if (diagText) diagText.innerText = `— Flagged ${lc.prediction} (${lc.heart_rate_bpm} BPM, ${(lc.confidence * 100).toFixed(1)}% Confidence)`;
+                if (banner && !appState.bannerAcknowledged) banner.style.display = "flex";
+            } else if (!data.has_critical) {
+                if (banner) banner.style.display = "none";
+            }
+
+            // 5. Update Audit Log Table from Cassandra
+            if (Array.isArray(data.audit_log) && data.audit_log.length > 0) {
+                renderAuditLogFromCassandra(data.audit_log);
+            }
+        } catch (e) {
+            console.warn("Cassandra telemetry poll:", e);
+        }
+    }
+
+    function renderAuditLogFromCassandra(records) {
+        const tbody = document.getElementById("auditTableBody");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+        appState.auditCount = records.length;
+        const badge = document.getElementById("auditCountBadge");
+        if (badge) badge.innerText = `${records.length} Events Recorded`;
+
+        records.forEach(rec => {
+            const tr = document.createElement("tr");
+            const isCrit = rec.alert_status === "CRITICAL";
+            if (isCrit) tr.className = "row-critical";
+
+            const p = patientsData[rec.patient_id] || { ward: "Ward West", room: "Room 101" };
+            const timeStr = (rec.timestamp || "").split(" ")[1] || rec.timestamp || "Now";
+
+            tr.innerHTML = `
+                <td><strong>${timeStr}</strong></td>
+                <td><strong>${rec.patient_id}</strong></td>
+                <td>${p.ward} • ${p.room}</td>
+                <td><code>${rec.device_id || 'DEV-101'}</code></td>
+                <td><strong>${rec.heart_rate_bpm} BPM</strong></td>
+                <td>${rec.prediction}</td>
+                <td><span class="badge-tag ${isCrit ? 'tag-critical' : 'tag-stable'}">${isCrit ? '🚨 CRITICAL' : '🟢 STABLE'}</span></td>
+                <td><button class="btn-inspect" onclick="openPatientModal('${rec.patient_id}')">REVIEW</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Run first telemetry poll immediately and then every 1.5 seconds
+    pollLiveCassandraTelemetry();
+    setInterval(pollLiveCassandraTelemetry, 1500);
 
     // Live clock
     setInterval(() => {

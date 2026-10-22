@@ -61,7 +61,7 @@ The system classifies each heartbeat into one of 5 standard **AAMI EC57** arrhyt
 
 ---
 
-## 📂 Unified Project Structure
+## 📂 Repository Structure
 
 ```
 cardiopulse/
@@ -75,7 +75,7 @@ cardiopulse/
 │   ├── app.py                   # FastAPI service serving /predict, /health & /monitor/
 │   ├── train_model.py           # 1D-ResNet architecture & training script
 │   ├── models/
-│   │   └── ecg_resnet1d.pt      # Pre-trained 1D-ResNet PyTorch weights (97.94% accuracy)
+│   │   └── ecg_resnet1d.pt      # Pre-trained 1D-ResNet PyTorch weights (98.75% accuracy)
 │   ├── Dockerfile               # Container definition for DL service
 │   └── requirements.txt         # Service dependencies
 ├── dags/
@@ -109,28 +109,29 @@ cardiopulse/
 
 ---
 
-## 🎓 LP-2 Subject Mapping (3 Core Domains)
+## 🛠️ Technology Stack & Core Components
 
-This project satisfies all three core engineering domains for **Laboratory Practice 2 (LP-2)**:
-
-| Domain | Syllabus Requirement | Implementation in this Pipeline |
+| Component | Technology | Purpose |
 | :--- | :--- | :--- |
-| **🧠 Deep Learning (DL)** | ResNet-1D / ConvLSTM, Heartbeat segmentation, RR interval analysis, Anomaly classification | **PyTorch 1D-ResNet** (`dl_inference_service`): 5-stage residual network validated at **97.94% accuracy** on MIT-BIH dataset; performs real-time classification across 5 AAMI EC57 arrhythmia classes. |
-| **⚡ Big Data Analytics (BDA)** | Continuous Ingestion via Apache Kafka, Stream Processing (sub-second windowing, alert filtering), NoSQL storage | **Apache Kafka + Apache Spark + Cassandra**: Kafka topic `ecg_telemetry` buffers wearable ECG packets; PySpark Structured Streaming processes events in real time and writes to Cassandra table `spark_streams.ecg_patient_alerts`. |
-| **☁️ Cloud Computing (CC)** | Containerized microservice architecture, Serverless/REST endpoints, Web Telemetry | **Dockerized Architecture + FastAPI + Web Monitor**: Complete multi-container distributed cluster (`docker-compose.yml`), RESTful inference microservice, and live 60 FPS ICU telehealth web monitor. |
+| **🧠 Deep Learning (DL)** | **PyTorch 1D-ResNet** (`dl_inference_service`) | 5-stage residual network validated at **98.75% accuracy** on MIT-BIH dataset; performs sub-millisecond classification across 5 AAMI EC57 arrhythmia classes. |
+| **⚡ Event Streaming** | **Apache Kafka & Zookeeper** | Ingests and buffers continuous Lead-II ECG packets from wearable IoMT units on topic `ecg_telemetry`. |
+| **🔄 Stream Processing** | **Apache Spark Structured Streaming** | Consumes events in real-time, validates schema, filters arrhythmias, and writes to NoSQL storage. |
+| **🗄️ Distributed Database** | **Apache Cassandra** | Wide-column NoSQL database storing enriched patient telemetry in table `spark_streams.ecg_patient_alerts`. |
+| **☁️ API & Microservices** | **FastAPI + Uvicorn** | High-performance asynchronous REST microservice serving model predictions and live telemetry endpoints. |
+| **📊 Clinical Dashboards** | **Streamlit + Plotly + HTML5 Canvas** | Multi-patient ICU command center and 60 FPS sweeping oscilloscope with calibrated medical grid and audio alerts. |
 
 ---
 
-## ⚡ Step-by-Step Execution Guide (All 3 Domains Active)
+## ⚡ Step-by-Step Execution Guide
 
 Follow these steps to run the complete end-to-end distributed system:
 
 ### Step 1: Start Distributed Cluster Infrastructure (Docker)
-Starts Zookeeper, Kafka Broker (port 9092), Spark Master (port 9091), Spark Worker, Cassandra (port 9042), and Postgres:
+Starts Zookeeper, Kafka Broker (port 9092), Spark Master (port 9091), Spark Worker, and Cassandra (port 9042):
 ```bash
-docker-compose up -d
+docker-compose up -d zookeeper broker cassandra spark-master spark-worker
 ```
-*Wait ~1-2 minutes for Kafka and Cassandra to become fully healthy.*
+*Wait ~45-60 seconds for Kafka and Cassandra to become fully healthy.*
 
 Verify running containers:
 ```bash
@@ -139,28 +140,46 @@ docker ps
 
 ---
 
-### Step 2: Start the Deep Learning Inference Microservice (Domain 1: DL)
+### Step 2: Initialize Cassandra Schema (NoSQL Sink)
+Fresh Cassandra instances start with no schema. Run this once:
+
+*(In Git Bash, use `//tmp` to prevent Windows path auto-translation)*:
+```bash
+docker exec cassandra cqlsh -f //tmp/init_cassandra.cql
+```
+*(In PowerShell / CMD: `docker exec cassandra cqlsh -f /tmp/init_cassandra.cql`)*
+
+*Verify the keyspace is created:*
+```bash
+docker exec cassandra cqlsh -e "DESCRIBE KEYSPACE spark_streams;"
+```
+
+---
+
+### Step 3: Start the PyTorch 1D-ResNet Inference Service
 In a new terminal:
 ```bash
-python -m uvicorn dl_inference_service.app:app --port 8000
+python dl_inference_service/app.py
 ```
+*(Or `python -m uvicorn dl_inference_service.app:app --port 8000`)*
 *The 1D-ResNet classifier loads `ecg_resnet1d.pt` and serves `/predict` with sub-millisecond inference.*
 
 ---
 
-### Step 3: Launch Apache Spark Structured Streaming (Domain 2: Big Data)
-Submit the PySpark job that consumes from Kafka topic `ecg_telemetry`, validates schema, and writes directly into Cassandra table `spark_streams.ecg_patient_alerts`:
+### Step 4: Launch Apache Spark Structured Streaming
+In a new terminal, submit the PySpark job that consumes from Kafka topic `ecg_telemetry`, validates schema, and writes directly into Cassandra table `spark_streams.ecg_patient_alerts`:
 
+**In Git Bash**:
 ```bash
-docker exec -it wearable-ecg-cloud-analytics-spark-master-1 spark-submit \
+docker exec -i spark-master spark-submit \
   --packages com.datastax.spark:spark-cassandra-connector_2.12:3.4.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
-  /tmp/spark_stream.py
+  //tmp/spark_stream.py
 ```
-*(Tip: Copy `spark_stream.py` to the master container using `docker cp spark_stream.py wearable-ecg-cloud-analytics-spark-master-1:/tmp/spark_stream.py` if not already present).*
+*(In PowerShell / CMD: use `/tmp/spark_stream.py`)*
 
 ---
 
-### Step 4: Start Ingesting Wearable Telemetry to Kafka (Domain 2: Big Data)
+### Step 5: Start Ingesting Wearable Telemetry to Kafka
 In a new terminal:
 ```bash
 python dags/kafka_stream.py
@@ -169,7 +188,7 @@ python dags/kafka_stream.py
 
 ---
 
-### Step 5: Launch the Dashboards (Domain 3: Cloud & Web)
+### Step 6: Launch the Clinical Surveillance Dashboards
 You can view both clinical interfaces concurrently:
 
 1. **📊 Cloud Big Data & Cassandra Suite** (Streamlit):

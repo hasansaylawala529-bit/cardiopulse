@@ -165,14 +165,18 @@ services:
 
   spark-master:
     image: bitnamilegacy/spark:3.5.0
+    container_name: spark-master
     command: bin/spark-class org.apache.spark.deploy.master.Master
     ports:
       - "9091:8080"
       - "7078:7077"
+    volumes:
+      - ./spark_stream.py:/tmp/spark_stream.py
     networks:
       - confluent
   spark-worker:
     image: bitnamilegacy/spark:3.5.0
+    container_name: spark-worker
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
@@ -184,12 +188,14 @@ services:
     networks:
       - confluent
 
-  cassandra_db:
+  cassandra:
     image: cassandra:latest
     container_name: cassandra
     hostname: cassandra
     ports:
       - "9042:9042"
+    volumes:
+      - ./script/init_cassandra.cql:/tmp/init_cassandra.cql
     environment:
       - MAX_HEAP_SIZE=512M
       - HEAP_NEWSIZE=100M

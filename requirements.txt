@@ -1,5 +1,5 @@
 # ========================================================
-# Wearable ECG Cloud Analytics - Unified Dependencies
+# CardioPulse: Wearable ECG Cloud Analytics Dependencies
 # ========================================================
 
 # Frontend Dashboard & Visualizations

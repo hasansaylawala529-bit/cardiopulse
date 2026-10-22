@@ -121,3 +121,99 @@ def get_sample_beat(type_hint: str = "any"):
     res["signal"] = signal
     res["ground_truth"] = ground_truth
     return res
+
+# -------------------------------------------------------------
+# Apache Cassandra Telemetry Data Access Layer
+# -------------------------------------------------------------
+import json
+from cassandra.cluster import Cluster
+
+cas_session = None
+
+def get_cassandra_session():
+    global cas_session
+    if cas_session is not None:
+        try:
+            if not cas_session.is_shutdown:
+                return cas_session
+        except Exception:
+            pass
+    hosts = ["127.0.0.1", "localhost", "cassandra"]
+    for host in hosts:
+        try:
+            cluster = Cluster([host], port=9042, connect_timeout=2)
+            cas_session = cluster.connect("spark_streams")
+            print(f"[+] Connected to Apache Cassandra at {host}:9042 (spark_streams)")
+            return cas_session
+        except Exception:
+            continue
+    return None
+
+@app.get("/api/telemetry")
+def get_live_telemetry(limit: int = 100):
+    """Fetches real streaming telemetry ingested from Kafka -> Spark -> Cassandra"""
+    session = get_cassandra_session()
+    if not session:
+        return {
+            "status": "connecting",
+            "source": "Waiting for Cassandra cluster on port 9042...",
+            "patients": {},
+            "audit_log": [],
+            "stats": {"total_records": 0, "critical_count": 0, "stable_count": 0, "connected_devices": 0}
+        }
+    try:
+        rows = session.execute(f"SELECT * FROM ecg_patient_alerts LIMIT {limit};")
+        records = [r._asdict() for r in rows]
+        records.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+        
+        patients = {}
+        for r in records:
+            p_id = r.get("patient_id")
+            if p_id and p_id not in patients:
+                sig_raw = r.get("lead_ii_signal", "[]")
+                try:
+                    sig = json.loads(sig_raw) if isinstance(sig_raw, str) else sig_raw
+                except Exception:
+                    sig = []
+                patients[p_id] = {
+                    "patient_id": p_id,
+                    "device_id": r.get("device_id", f"DEV-{p_id[-3:]}"),
+                    "timestamp": r.get("timestamp"),
+                    "heart_rate_bpm": r.get("heart_rate_bpm", 72),
+                    "prediction": r.get("prediction", "Normal Beat (N)"),
+                    "class_id": r.get("class_id", 0),
+                    "confidence": float(r.get("confidence", 0.99)),
+                    "alert_status": r.get("alert_status", "NORMAL"),
+                    "lead_ii_signal": sig
+                }
+        
+        crit_count = sum(1 for r in records if r.get("alert_status") == "CRITICAL")
+        crit_records = [r for r in records if r.get("alert_status") == "CRITICAL"]
+        latest_crit = crit_records[0] if crit_records else None
+
+        return {
+            "status": "connected",
+            "source": "Apache Cassandra (spark_streams.ecg_patient_alerts)",
+            "has_critical": (crit_count > 0),
+            "latest_critical": latest_crit,
+            "patients": patients,
+            "audit_log": records[:25],
+            "stats": {
+                "total_records": len(records),
+                "critical_count": crit_count,
+                "stable_count": len(records) - crit_count,
+                "connected_devices": len(patients)
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e), "patients": {}, "audit_log": []}
+
+@app.post("/api/simulate-pvc")
+def simulate_pvc():
+    """Generates an urgent PVC beat for on-demand alert testing."""
+    return get_sample_beat(type_hint="pvc")
+
+if __name__ == "__main__":
+    import uvicorn
+    print("[+] Starting Wearable ECG FastAPI Inference Service on http://0.0.0.0:8000...")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
