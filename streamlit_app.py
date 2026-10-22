@@ -851,7 +851,7 @@ if len(visible_patients) > 0:
 
                 # Render Calibrated Lead-II Strip with medical pink grid
                 fig = create_medical_ecg_strip(p["signal"], is_critical=is_crit, height=135)
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=f"ecg_tile_chart_{p['id']}")
 
                 # Card Footer with Action Button
                 btn_col1, btn_col2 = st.columns([1, 1])
@@ -890,7 +890,7 @@ if "selected_inspect_patient" in st.session_state and st.session_state.selected_
 
     # High-resolution deep-dive diagnostic strip
     fig_modal = create_medical_ecg_strip(p_data["signal"], is_critical=is_crit, height=220)
-    st.plotly_chart(fig_modal, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig_modal, use_container_width=True, config={"displayModeBar": False}, key=f"ecg_modal_chart_{p_data['id']}")
 
     # Two-column deep-dive parameters
     m_col1, m_col2 = st.columns(2)
